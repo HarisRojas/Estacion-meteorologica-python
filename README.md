@@ -23,8 +23,8 @@ Este proyecto es un script en Python que actúa como una estación meteorológic
 
 1. **Clonar el repositorio**:
    ```bash
-   git clone https://github.com/HarisRojas/Estaci-n-metereol-gica-python.git
-   cd Estaci-n-metereol-gica-python
+   git clone https://github.com/HarisRojas/Estacion-meteorologica-python.git
+   cd Estacion-meteorologica-python
 2. **Instalar las dependencias**:
     ```bash
     pip install requests rich pyfiglet
