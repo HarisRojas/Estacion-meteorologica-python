@@ -12,32 +12,39 @@ import pyfiglet
 import os
 
 API_KEY = "36fb65f7fcb2d917cef74ea405239d5e"
+CITY = "Logroño"
 BASE_URL = "http://api.openweathermap.org/data/2.5/"
-INTERVALO_ACTUALIZACION = 43200  # 12 horas en segundos
+WEATHER_URL = f"{BASE_URL}weather?q={CITY}&appid={API_KEY}&units=metric"
+AIR_QUALITY_URL = f"{BASE_URL}air_pollution?lat=42.4627&lon=-2.4447&appid={API_KEY}"
+INTERVALO_ACTUALIZACION = 3600  # 12 horas en segundos
+CSV_FILE = f"{CITY}_datos_meteorologicos.csv"
+
 console = Console()
 
-# Diccionario de ciudades españolas
-CIUDADES = {
-    "1": ("Madrid", 40.4168, -3.7038),
-    "2": ("Barcelona", 41.3879, 2.16992),
-    "3": ("Valencia", 39.4699, -0.3763),
-    "4": ("Sevilla", 37.3886, -5.9823),
-    "5": ("Zaragoza", 41.6488, -0.8891),
-    "6": ("Logroño", 42.4627, -2.4447),
-}
+def mostrar_reloj():
+    with Live(refresh_per_second=1) as live:
+        while True:
+            hora_actual = datetime.now().strftime('%H:%M:%S')
+            hora_ascii = pyfiglet.figlet_format(hora_actual)
+            reloj_panel = Panel(
+                f"[bold yellow]Hora actual:[/bold yellow]\n[bold cyan]{hora_ascii}[/bold cyan]",
+                title="Reloj",
+                border_style="magenta"
+            )
+            live.update(reloj_panel)
+            time.sleep(1)
 
-# Inicializar archivo CSV para cada ciudad
-def inicializar_csv(ciudad):
-    csv_file = f"{ciudad}_datos_meteorologicos.csv"
-    if not os.path.exists(csv_file):
-        with open(csv_file, mode="w", newline="", encoding="utf-8") as file:
+# Inicializar archivo CSV si no existe
+def inicializar_csv():
+    if not os.path.exists(CSV_FILE):
+        with open(CSV_FILE, mode="w", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
             writer.writerow([
                 "Fecha y Hora",
                 "Temp Min (°C)",
                 "Temp Max (°C)",
                 "Temp Actual (°C)",
-                "Humedad Actual (%)",
+                "Humedad (%)",
                 "Viento (m/s)",
                 "Dirección Viento (°)",
                 "Presión (hPa)",
@@ -45,18 +52,22 @@ def inicializar_csv(ciudad):
                 "Nubosidad (%)",
                 "Precipitación (mm)"
             ])
-    return csv_file
+            console.print(f"[bold green]Archivo CSV inicializado: {CSV_FILE}[/bold green]")
 
 # Escribir datos en el CSV
-def escribir_csv(csv_file, datos):
-    with open(csv_file, mode="a", newline="", encoding="utf-8") as file:
+def escribir_csv(datos):
+    # Crear encabezados si el archivo no existe
+    if not os.path.exists(CSV_FILE):
+        inicializar_csv()
+    # Agregar nueva línea al archivo existente
+    with open(CSV_FILE, mode="a", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
         writer.writerow(datos)
 
-# Obtener temperaturas históricas
-def obtener_temperaturas_historicas(csv_file):
+# Leer datos históricos del CSV
+def obtener_temperaturas_historicas():
     try:
-        with open(csv_file, mode="r", encoding="utf-8") as file:
+        with open(CSV_FILE, mode="r", encoding="utf-8") as file:
             reader = csv.DictReader(file)
             temperaturas_min = []
             temperaturas_max = []
@@ -70,18 +81,15 @@ def obtener_temperaturas_historicas(csv_file):
     except FileNotFoundError:
         return "N/A", "N/A"
 
-# Generar tabla meteorológica
-def generar_tabla(ciudad, latitud, longitud):
+# Generar la tabla meteorológica
+def generar_tabla():
     try:
-        # URLs de las APIs
-        WEATHER_URL = f"{BASE_URL}weather?q={ciudad}&appid={API_KEY}&units=metric"
-        AIR_QUALITY_URL = f"{BASE_URL}air_pollution?lat={latitud}&lon={longitud}&appid={API_KEY}"
-
-        # Datos del clima
+        # Obtener datos del clima
         weather_response = requests.get(WEATHER_URL)
         weather_response.raise_for_status()
         weather_data = weather_response.json()
 
+        # Datos básicos
         temperatura_min = weather_data["main"]["temp_min"]
         temperatura_max = weather_data["main"]["temp_max"]
         temperatura_actual = weather_data["main"]["temp"]
@@ -92,14 +100,13 @@ def generar_tabla(ciudad, latitud, longitud):
         nubosidad = weather_data["clouds"]["all"]
         precipitacion = weather_data.get("rain", {}).get("1h", 0.0)
 
-        # Calidad del aire
+        # Obtener calidad del aire
         air_quality_response = requests.get(AIR_QUALITY_URL)
         air_quality_response.raise_for_status()
         air_quality_data = air_quality_response.json()
         calidad_aire = air_quality_data["list"][0]["main"]["aqi"]
 
-        # Archivo CSV
-        csv_file = inicializar_csv(ciudad)
+        # Guardar datos en CSV
         datos_csv = [
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             temperatura_min,
@@ -113,13 +120,13 @@ def generar_tabla(ciudad, latitud, longitud):
             nubosidad,
             precipitacion
         ]
-        escribir_csv(csv_file, datos_csv)
+        escribir_csv(datos_csv)
 
-        # Datos históricos
-        temp_min_historica, temp_max_historica = obtener_temperaturas_historicas(csv_file)
+        # Obtener datos históricos
+        temp_min_historica, temp_max_historica = obtener_temperaturas_historicas()
 
-        # Crear tabla
-        tabla = Table(title=f"Datos Meteorológicos para: {ciudad}")
+        # Crear la tabla
+        tabla = Table(title=f"Datos Meteorológicos para: {CITY}")
         tabla.add_column("Parámetro", style="cyan", justify="left")
         tabla.add_column("Valor", style="magenta", justify="right")
 
@@ -141,20 +148,11 @@ def generar_tabla(ciudad, latitud, longitud):
     except requests.exceptions.RequestException as e:
         return Panel(f"[bold red]Error al obtener los datos:[/bold red] {e}", title="Error")
 
-# Submenú de selección de ciudad
-def seleccionar_ciudad():
-    ciudades_menu = "\n".join([f"[bold green]{key}.[/] {value[0]}" for key, value in CIUDADES.items()])
-    ciudades_panel = Panel(ciudades_menu, title="Selecciona una Ciudad", border_style="cyan")
-    console.print(ciudades_panel)
-    opcion = Prompt.ask("[bold green]Selecciona una opción[/bold green]", choices=CIUDADES.keys())
-    return CIUDADES[opcion]
-
 # Mostrar estación meteorológica
 def mostrar_estacion_meteorologica():
-    ciudad, latitud, longitud = seleccionar_ciudad()
     with Live(refresh_per_second=1) as live:
         while True:
-            tabla = generar_tabla(ciudad, latitud, longitud)
+            tabla = generar_tabla()
             for segundos in range(INTERVALO_ACTUALIZACION, 0, -1):
                 panel_temporizador = Panel(
                     f"[bold yellow]Próxima actualización en:[/bold yellow] [bold cyan]{segundos}[/bold cyan] segundos",
@@ -183,6 +181,7 @@ def limpiar_pantalla():
 
 # Función principal
 def main():
+    inicializar_csv()
     while True:
         console.clear()
         mostrar_menu()
