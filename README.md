@@ -33,9 +33,9 @@ Este proyecto es un script en Python que actúa como una estación meteorológic
     - Modifica la variable API_KEY en el script y añade tu clave de API.
 
 ## Uso
-Ejecuta el script directamente desde la terminal:
-
-pip install requests rich pyfiglet
+1. Ejecuta el script directamente desde la terminal:
+    ```bash
+    python estacion.py
 
 ## Menú principal
 
