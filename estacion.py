@@ -15,7 +15,7 @@ API_KEY = "TU API KEY"
 CITY = "TU CIUDAD"
 BASE_URL = "http://api.openweathermap.org/data/2.5/"
 WEATHER_URL = f"{BASE_URL}weather?q={CITY}&appid={API_KEY}&units=metric"
-INTERVALO_ACTUALIZACION = 3600  # 12 horas en segundos
+INTERVALO_ACTUALIZACION = 3600  # Introduce el tiempo de actualizacion en segundos.
 CSV_FILE = f"{CITY}_datos_meteorologicos.csv"
 
 console = Console()
