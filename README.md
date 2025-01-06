@@ -34,8 +34,8 @@ Este proyecto es un script en Python que actúa como una estación meteorológic
 
 ## Uso
 Ejecuta el script directamente desde la terminal:
-  ```bash
-  python estacion.py
+
+pip install requests rich pyfiglet
 
 ## Menú principal
 
