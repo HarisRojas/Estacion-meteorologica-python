@@ -11,15 +11,31 @@ from rich.prompt import Prompt, Confirm
 import pyfiglet
 import os
 
-API_KEY = "TU API KEY"
-CITY = "TU CIUDAD"
+API_KEY = "36fb65f7fcb2d917cef74ea405239d5e"
+CITY = "Logroño"
 BASE_URL = "http://api.openweathermap.org/data/2.5/"
 WEATHER_URL = f"{BASE_URL}weather?q={CITY}&appid={API_KEY}&units=metric"
-AIR_QUALITY_URL = f"{BASE_URL}air_pollution?lat=42.4627&lon=-2.4447&appid={API_KEY}"
 INTERVALO_ACTUALIZACION = 3600  # 12 horas en segundos
 CSV_FILE = f"{CITY}_datos_meteorologicos.csv"
 
 console = Console()
+
+# Función para obtener latitud y longitud de la ciudad
+def obtener_latitud_longitud():
+    try:
+        response = requests.get(WEATHER_URL)
+        response.raise_for_status()
+        data = response.json()
+        latitud = data["coord"]["lat"]
+        longitud = data["coord"]["lon"]
+        return latitud, longitud
+    except requests.exceptions.RequestException as e:
+        console.print(f"[bold red]Error al obtener coordenadas:[/bold red] {e}")
+        sys.exit(1)
+
+# Obtener latitud y longitud dinámicamente
+latitud, longitud = obtener_latitud_longitud()
+AIR_QUALITY_URL = f"{BASE_URL}air_pollution?lat={latitud}&lon={longitud}&appid={API_KEY}"
 
 def mostrar_reloj():
     with Live(refresh_per_second=1) as live:
@@ -34,7 +50,7 @@ def mostrar_reloj():
             live.update(reloj_panel)
             time.sleep(1)
 
-# Inicializar archivo CSV si no existe
+# Inicializar archivo CSV
 def inicializar_csv():
     if not os.path.exists(CSV_FILE):
         with open(CSV_FILE, mode="w", newline="", encoding="utf-8") as file:
@@ -52,14 +68,9 @@ def inicializar_csv():
                 "Nubosidad (%)",
                 "Precipitación (mm)"
             ])
-            console.print(f"[bold green]Archivo CSV inicializado: {CSV_FILE}[/bold green]")
 
 # Escribir datos en el CSV
 def escribir_csv(datos):
-    # Crear encabezados si el archivo no existe
-    if not os.path.exists(CSV_FILE):
-        inicializar_csv()
-    # Agregar nueva línea al archivo existente
     with open(CSV_FILE, mode="a", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
         writer.writerow(datos)
