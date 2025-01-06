@@ -11,8 +11,8 @@ from rich.prompt import Prompt, Confirm
 import pyfiglet
 import os
 
-API_KEY = "36fb65f7fcb2d917cef74ea405239d5e"
-CITY = "Logroño"
+API_KEY = "TU API KEY"
+CITY = "TU CIUDAD"
 BASE_URL = "http://api.openweathermap.org/data/2.5/"
 WEATHER_URL = f"{BASE_URL}weather?q={CITY}&appid={API_KEY}&units=metric"
 AIR_QUALITY_URL = f"{BASE_URL}air_pollution?lat=42.4627&lon=-2.4447&appid={API_KEY}"
